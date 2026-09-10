@@ -1,16 +1,15 @@
 # Licensed under the MIT License.
 
-
 from .. import LOGGER
 from ..utils.helper import HandlerRegistry
 
-start_registry = HandlerRegistry("bot.handlers.start")
-search_registry = HandlerRegistry("bot.handlers.search")
-callback_registry = HandlerRegistry("bot.handlers.callback")
-inline_registry = HandlerRegistry("bot.handlers.inline")
-admin_registry = HandlerRegistry("bot.handlers.admin")
-clones_registry = HandlerRegistry("bot.handlers.clones")
-lang_registry = HandlerRegistry("bot.handlers.lang")
+start_registry = HandlerRegistry("serena.handlers.start")
+search_registry = HandlerRegistry("serena.handlers.search")
+callback_registry = HandlerRegistry("serena.handlers.callback")
+inline_registry = HandlerRegistry("serena.handlers.inline")
+admin_registry = HandlerRegistry("serena.handlers.admin")
+clones_registry = HandlerRegistry("serena.handlers.clones")
+lang_registry = HandlerRegistry("serena.handlers.lang")
 
 from . import admin, callback, clones, inline, lang, search, start
 

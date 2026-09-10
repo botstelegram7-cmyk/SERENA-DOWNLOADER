@@ -1,8 +1,7 @@
 # Licensed under the MIT License.
 
-
 from pyrogram import filters
-from pyrogram.handlers import CallbackQueryHandler, MessageHandler
+from pyrogram.handlers import CallbackQueryHandler, ManagedBotUpdateHandler, MessageHandler
 from pyrogram.types import CallbackQuery, ManagedBotUpdated, Message
 
 from .. import LOGGER
@@ -63,7 +62,7 @@ async def mybot_delete_cb(client, callback_query: CallbackQuery):
     await callback_query.message.edit_text(text_body, reply_markup=markup)
 
 
-@app.on_managed_bot()
+@registry.on(ManagedBotUpdateHandler)
 async def managed_bot_created(client, managed_bot: ManagedBotUpdated):
     owner, bot = managed_bot.user, managed_bot.bot
     lang = await mongo.get_lang(owner.id)
@@ -72,6 +71,10 @@ async def managed_bot_created(client, managed_bot: ManagedBotUpdated):
         token = await clones.get_managed_bot_token(client, bot.id)
     except Exception:
         LOGGER.exception("Failed to export token for managed bot_id=%s", bot.id)
+        try:
+            await client.send_message(owner.id, t("clone_setup_failed_text", lang))
+        except Exception:
+            pass
         return
 
     try:

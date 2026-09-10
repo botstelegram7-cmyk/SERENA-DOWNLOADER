@@ -31,3 +31,7 @@ services:
         sync: false
       - key: UPDATES_CHANNEL_URL
         value: https://t.me/serenaunzipbot
+      - key: WEBHOOK_PATH
+        value: /telegram/webhook
+      - key: WEBHOOK_SECRET
+        sync: false

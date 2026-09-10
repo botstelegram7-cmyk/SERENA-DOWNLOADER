@@ -7,31 +7,33 @@
 [![Telegram](https://img.shields.io/badge/Telegram-@serenaunzipbot-26A5E4?logo=telegram&logoColor=white)](https://t.me/serenaunzipbot)
 [![Maintained by](https://img.shields.io/badge/Maintained%20by-%40TechnicalSerena-8b5cf6)](https://t.me/TechnicalSerena)
 
-![SERENA logo](bot/assets/serena_logo.png)
+![SERENA logo](serena/assets/serena_logo.png)
 
-**SERENA** is a production-oriented Telegram media downloader built with **PyroTGFork**, **MongoDB**, **FFmpeg**, and the Arc media API. It supports search, supported platform links, inline mode, clone bots, Docker, and Render Web Services.
+**SERENA** is a production-ready, high-performance Telegram media downloader built with **PyroTGFork**, **MongoDB**, **FFmpeg**, and the Arc media API. It supports search, media link extraction, inline mode, managed clone bots, Docker containers, and Render Web Services with serverless-style webhook auto-wake.
 
-The repository includes a health endpoint for Render, Docker Compose for local development, multi-key API failover, a professional `.env.example`, and a generated SERENA brand asset.
+The repository includes a unified HTTP health and webhook server for Render Free plan wake-on-request, Docker Compose for local development, multi-key API failover, backwards compatibility for `python -m bot`, and a modern SERENA brand asset.
 
-> **Important:** `API_URL=https://api.arcmusic.fun` is the external media API dependency used by this code. The hostname is intentionally unchanged because it is an API endpoint, not the SERENA brand. You need an active Arc API plan and at least one valid API key.
+> **Important:** `API_URL=https://api.arcmusic.fun` is the external media API dependency used by this code. You need an active Arc API plan and at least one valid API key.
 
-| Runtime | Deployment | Storage | Media engine | Health check |
+| Runtime | Deployment | Storage | Media engine | Health & Webhook |
 |---|---|---|---|---|
-| Python 3.12 + PyroTGFork | Docker / Render Web Service | MongoDB Atlas | FFmpeg | `/health` |
+| Python 3.12+ / PyroTGFork | Docker / Render Web Service | MongoDB Atlas | FFmpeg | `/health`, `/wake`, `/telegram/webhook` |
 
 <details>
 <summary><strong>Table of contents</strong></summary>
 
 - [Features](#features)
 - [Repository structure](#repository-structure)
+- [Render Free Webhook & Auto-Wake](#render-free-webhook--auto-wake)
+- [Clone Bot Deep Link Flow](#clone-bot-deep-link-flow)
 - [Credentials](#credentials-where-to-get-each-value)
 - [Arc API key setup](#arc-api-key-setup)
 - [Free plan limitations](#free-arc-api-plan-limitations)
 - [Multiple API keys](#multiple-api-keys-and-automatic-failover)
-- [Clone setup](#enable-the-clone-this-bot-button)
 - [Local setup](#environment-setup)
 - [Docker Compose](#run-with-docker-compose)
 - [Render deployment](#deploy-on-render-as-a-web-service)
+- [Documentation & Guides](#documentation--guides)
 - [Credits and branding](#serena-credits-and-branding)
 
 </details>
@@ -40,35 +42,80 @@ The repository includes a health endpoint for Render, Docker Compose for local d
 
 | Area | Included |
 |---|---|
-| Media | YouTube search/tracks/playlists, Spotify, SoundCloud, Apple Music, JioSaavn, and social links |
-| Delivery | Telegram private chats, groups, inline mode, playlists, media groups, thumbnails, and FFmpeg conversion |
-| Operations | MongoDB-backed users/clones, admin stats/broadcast tools, language preferences, and temporary downloads |
-| Reliability | Arc API key rotation/failover, retries, job polling, and clear error handling |
-| Deployment | Docker, Docker Compose, Render Web Service, `/health` and `/healthz` endpoints |
-| Branding | AI-generated SERENA logo, `@TechnicalSerena` maintainer credit, and `@serenaunzipbot` updates channel |
+| **Media Extraction** | YouTube search/tracks/playlists, Spotify, SoundCloud, Apple Music, JioSaavn, Instagram, Facebook, Threads, TikTok, Twitter/X, Bluesky, Pinterest, Reddit, and Terabox |
+| **Delivery** | Telegram private chats, groups, inline mode, playlists, media groups, album thumbnails, and FFmpeg transcoding |
+| **Render Webhook Wake** | Automatic Telegram Bot API webhook registration (`POST /telegram/webhook`); wakes sleeping Render Free instances on incoming user message without external monitors |
+| **Clone Bots** | Reliable managed-bot deep link flow (`https://t.me/newbot/...`), automatic token export, SERENA branding application, and `/mybot` manager |
+| **Operations** | MongoDB-backed users & clone registry, admin stats/broadcast tools, multi-language preferences (`en`, `es`, `my`, `ru`), and ephemeral download cleanup |
+| **Reliability** | Arc API multi-key rotation/failover (`401`/`403`/`429` fallback), auto-retries, job polling, and graceful exception handling |
+| **Deployment** | Docker, Docker Compose, Render Blueprint (`render.yaml`), `/health`, `/healthz`, `/wake` endpoints, and `python -m bot` backwards compatibility |
+| **Branding** | Modern circular teal/blue SERENA logo icon, `@TechnicalSerena` maintainer credit, and `@serenaunzipbot` updates channel |
+
+---
 
 ## Repository structure
 
 ```text
 .
-├── bot/
-│   ├── assets/       # AI-generated SERENA logo and static assets
-│   ├── core/         # Config, Telegram client, MongoDB, clones, health server
-│   ├── dl/           # API client, download and media-delivery flows
-│   ├── handlers/     # Telegram message, callback, inline and admin handlers
-│   ├── local/        # Translation JSON catalogs
-│   └── utils/        # Classifiers, keyboards, caches and helpers
-├── Dockerfile
-├── docker-compose.yml
-├── render.yaml       # Optional Render Blueprint configuration
-├── requirements.txt
-├── .env.example
-└── README.md
+├── bot.py                # Backward compatibility entrypoint (python -m bot)
+├── Dockerfile            # Multi-stage optimized container image
+├── docker-compose.yml    # Local development with bundled MongoDB
+├── render.yaml           # Render Web Service Blueprint
+├── requirements.txt      # Production Python dependencies
+├── .env.example          # Environment variables template
+├── docs/                 # Detailed operational guides
+│   ├── architecture.md   # Architecture & internal module design
+│   ├── botfather.md      # BotFather management & deep link clone guide
+│   └── render.md         # Render Free Web Service & Webhook setup guide
+└── serena/               # Clean modular package
+    ├── assets/           # SERENA brand logo & static assets
+    ├── core/             # Config, Telegram client, MongoDB, clones, health server
+    ├── dl/               # Arc API client, download engines, FFmpeg, Terabox
+    ├── handlers/         # Message, callback, inline, clones, admin handlers
+    ├── local/            # Internationalization JSON catalogs (en, es, my, ru)
+    └── utils/            # Keyboard builder, classifier, caches, helpers
 ```
+
+---
+
+## Render Free Webhook & Auto-Wake
+
+On Render's Free tier, web services sleep after 15 minutes of inactivity. SERENA solves this natively:
+
+1. On startup, SERENA auto-registers its webhook URL with Telegram Bot API:
+   `https://YOUR-SERVICE.onrender.com/telegram/webhook`
+2. When a user sends a message or interaction in Telegram, Telegram sends an HTTP `POST` to Render.
+3. Render receives the HTTP request and **automatically wakes up the sleeping container**.
+4. The service initializes within ~45–60s (cold start) and processes user requests seamlessly.
+5. **No external monitoring services** (such as UptimeRobot or Better Stack) are required!
+
+Available HTTP endpoints:
+- `POST /telegram/webhook` — Telegram update receiver (supports optional `WEBHOOK_SECRET` verification)
+- `GET /health` and `GET /healthz` — Service health probe
+- `GET /wake` — Explicit wake ping endpoint
+- `GET /` — Service info and status overview
+
+---
+
+## Clone Bot Deep Link Flow
+
+SERENA uses Telegram's official managed-bot creation deep link:
+
+```text
+https://t.me/newbot/<MANAGER_USERNAME>/<SUGGESTED_USERNAME>?name=<SUGGESTED_NAME>
+```
+
+- **Reliability:** Universal inline button supported across all Telegram mobile, desktop, and web clients.
+- **Workflow:** Tapping **🤖 Clone this bot** opens BotFather directly with suggested username and name pre-filled.
+- **Automated Lifecycle:** Once created, Telegram notifies SERENA via `ManagedBotUpdated`. SERENA exports the bot token, sets the avatar and bot descriptions, and launches the clone bot in memory.
+- **Management:** Users can start, stop, or delete their cloned bots anytime with `/mybot`.
+- **Safety:** If Bot Management Mode is not enabled in BotFather, SERENA detects `can_manage_bots == False` and hides the clone button to prevent client errors.
+
+---
 
 ## Credentials: where to get each value
 
-Never commit `.env`, bot tokens, API hashes, API keys, or database passwords to GitHub. Set them as Render environment variables or keep them only in your local `.env` file.
+Never commit `.env`, bot tokens, API hashes, API keys, or database passwords to GitHub. Set them as Render environment variables or keep them in your local `.env` file.
 
 | Variable | Required | Where it comes from |
 |---|---:|---|
@@ -77,85 +124,35 @@ Never commit `.env`, bot tokens, API hashes, API keys, or database passwords to 
 | `BOT_TOKEN` | Yes | Create/manage the bot through Telegram's official [@BotFather](https://t.me/BotFather) |
 | `API_URL` | Yes | Existing media API endpoint: [api.arcmusic.fun](https://api.arcmusic.fun). Keep it unchanged unless you have a compatible replacement. |
 | `API_KEY` | One of these | Single-key compatibility option. Create an account at the [Arc API portal](https://portal.arcmusic.fun/register), choose a plan at [Plans](https://portal.arcmusic.fun/plans), then copy the key from [Usage](https://portal.arcmusic.fun/usage). |
-| `API_KEYS` | Recommended | Comma-separated backup keys, for example `key_one,key_two,key_three`. When set, it takes priority over `API_KEY`; the bot fails over after key/auth/quota or transport errors. |
+| `API_KEYS` | Recommended | Comma-separated backup keys (e.g. `key_one,key_two,key_three`). SERENA fails over automatically on `401`/`403`/`429` or transport errors. |
 | `MONGO_URI` | Yes | Create a MongoDB database at [MongoDB Atlas](https://www.mongodb.com/atlas/database), then copy its connection string. |
-| `OWNER_ID` | Yes | Your numeric Telegram user ID. You can retrieve it through a trusted Telegram user-ID bot such as [@userinfobot](https://t.me/userinfobot). |
-| `SUDO_USERS` | Yes | Comma-separated numeric Telegram user IDs allowed to use admin commands. `OWNER_ID` is added automatically. |
-| `UPDATES_CHANNEL_URL` | Optional | SERENA updates channel: `https://t.me/serenaunzipbot`. |
-| `APP_NAME` | Optional | Keep this as `SERENA` for the current branding. |
+| `MONGO_DB` | No | Database name (default: `serena`). |
+| `OWNER_ID` | Yes | Your numeric Telegram user ID from [@userinfobot](https://t.me/userinfobot). |
+| `SUDO_USERS` | Yes | Comma-separated numeric Telegram user IDs allowed to use admin commands (`/stats`, `/broadcast`). `OWNER_ID` is added automatically. |
+| `UPDATES_CHANNEL_URL` | Optional | SERENA updates channel (default: `https://t.me/serenaunzipbot`). |
+| `WEBHOOK_PATH` | Optional | Webhook route path (default: `/telegram/webhook`). |
+| `WEBHOOK_SECRET` | Optional | Secret token for validating `X-Telegram-Bot-Api-Secret-Token`. |
+| `WEBHOOK_URL` | Optional | Explicit full webhook URL (if omitted, `RENDER_EXTERNAL_URL` is used on Render). |
+| `APP_NAME` | Optional | Application title (default: `SERENA`). |
 | `HOST` / `PORT` | Managed | Local defaults are `0.0.0.0` and `10000`. Render injects `PORT` automatically. |
 
-### Arc API key setup
+---
 
-The API key is **not generated inside Swagger**. Swagger's `Try it out` button only tests an already-issued key. Generate/manage the key from the Arc API portal:
+## Arc API key setup
 
-1. Open the direct [Create account page](https://portal.arcmusic.fun/register).
-2. Register with email/password or choose **Continue with Google**.
-3. Sign in at the [Arc API login page](https://portal.arcmusic.fun/login).
-4. Open [Plans](https://portal.arcmusic.fun/plans) and select a plan. A free tier is available for testing.
-5. After activating the plan, open the [Usage page](https://portal.arcmusic.fun/usage).
-6. Copy the API key shown there and set it in Render as `API_KEY` or `API_KEYS`.
-7. If the key is leaked, regenerate it from the Usage page and update Render.
-
-Keep `API_URL` as `https://api.arcmusic.fun` unless you are using another compatible API server. The API's interactive documentation is at [portal.arcmusic.fun/docs](https://portal.arcmusic.fun/docs).
+1. Open the [Create account page](https://portal.arcmusic.fun/register).
+2. Register and sign in at the [Arc API login page](https://portal.arcmusic.fun/login).
+3. Open [Plans](https://portal.arcmusic.fun/plans) and select an active plan.
+4. Open the [Usage page](https://portal.arcmusic.fun/usage) and copy your API key.
+5. Add it to Render / `.env` as `API_KEY` or `API_KEYS`.
 
 ### Free Arc API plan limitations
 
-The public Arc API documentation confirms that plans have:
+- Plans include daily total request and video download quotas that reset at **midnight UTC**.
+- `429 Too Many Requests` indicates daily limits reached; configuring multiple keys in `API_KEYS` provides immediate failover.
+- `403 Forbidden` indicates an invalid or expired plan key.
 
-- A daily total request limit.
-- A separate daily video-download limit.
-- Both limits reset at **midnight UTC**, so the quota is daily, not monthly.
-- `429 Too Many Requests` when a daily request/video limit is reached.
-- `403 Forbidden` for an invalid/deactivated key, an inactive plan, or an expired plan.
-
-The exact numeric free-tier quotas are account/plan data shown after signing in on [Plans](https://portal.arcmusic.fun/plans) and [Usage](https://portal.arcmusic.fun/usage); they are not exposed as a fixed number in the public API docs. Do not rely on an old screenshot because the provider can change plan limits.
-
-> **Quota vs plan validity:** a daily quota reset does not mean the plan itself is permanent. The public documentation confirms the daily reset window, but it does not publicly state that the free tier is one-time-only or exactly 30 days. Check the plan status and expiry shown inside your authenticated [Usage](https://portal.arcmusic.fun/usage) page; that page is authoritative for your account.
-
-### Multiple API keys and automatic failover
-
-You can configure more than one key. The bot tries the current key first and moves to the next configured key after repeated API/auth/quota errors (`401`, `403`, `429`) or transport failures. Request/content errors such as an invalid link are returned without blindly rotating through every key.
-
-Use one of these formats:
-
-```env
-# Single key
-API_KEY=your_arc_api_key
-
-# Recommended: comma-separated fallback keys
-API_KEYS=first_key,second_key,third_key
-```
-
-`API_KEYS` takes priority over `API_KEY`. You may also use dashboard-friendly variables such as `API_KEY_1`, `API_KEY_2`, and so on. Only use keys you own or are authorised to use; multiple keys should be for reliability, not for bypassing Arc API plan limits.
-
-### Telegram setup
-
-1. Open [@BotFather](https://t.me/BotFather) and run `/newbot`.
-2. Copy the generated value into `BOT_TOKEN`.
-3. Open [Telegram API development tools](https://my.telegram.org/auth?to=apps), sign in, create an application, and copy `API_ID` and `API_HASH`.
-4. Send a message to your bot once it is online and confirm your numeric Telegram ID for `OWNER_ID`.
-5. If clone-bot features are enabled, follow the bot's `/start` instructions and complete the manual inline-mode steps in @BotFather.
-
-### Enable the `Clone this bot` button
-
-Telegram only allows `request_managed_bot` buttons for bots with **Bot Management Mode** enabled. Without this one-time Telegram setting, tapping the button shows `This bot doesn't support bot management mode`.
-
-1. Open [@BotFather](https://t.me/BotFather) and send `/mybots`.
-2. Select the SERENA manager bot.
-3. Open its **Bot Settings** in the BotFather Mini App.
-4. Enable **Bot Management Mode**.
-5. Restart/redeploy SERENA, then open a private chat and send `/start` again.
-
-SERENA now checks Telegram's `can_manage_bots` capability. If management mode is disabled, it hides the clone button instead of displaying a misleading button that will fail.
-
-### MongoDB Atlas setup
-
-1. Create a free cluster at [MongoDB Atlas](https://www.mongodb.com/atlas/database).
-2. Create a database user and password.
-3. Add the required network access rule. For a quick test, Atlas allows `0.0.0.0/0`; for production, restrict access where possible.
-4. Copy the `mongodb+srv://...` connection string into `MONGO_URI`.
-5. Use a database name such as `serena` in `MONGO_DB` or in the connection string.
+---
 
 ## Environment setup
 
@@ -165,119 +162,86 @@ Create a local environment file from the template:
 cp .env.example .env
 ```
 
-Fill in every required placeholder. `.env` is ignored by Git; `.env.example` contains placeholders only.
+Fill in your credentials. `.env` is ignored by Git.
 
 For local Docker Compose, keep:
-
 ```env
 MONGO_URI=mongodb://mongo:27017/serena
 MONGO_DB=serena
 ```
 
-For Render, replace `MONGO_URI` with the MongoDB Atlas connection string. Do not use `mongodb://localhost:27017` on Render; that points to the bot container itself, not Atlas.
+For Render, replace `MONGO_URI` with your MongoDB Atlas `mongodb+srv://...` connection string.
+
+---
 
 ## Run locally with Python
 
-Python 3.12 is recommended.
+Python 3.12+ is recommended:
 
 ```bash
 python -m venv .venv
 
-# Linux/macOS
+# Linux / macOS
 source .venv/bin/activate
 
-# Windows PowerShell
-# .venv\\Scripts\\Activate.ps1
+# Windows
+# .venv\Scripts\activate
 
 pip install --upgrade pip
 pip install -r requirements.txt
 python -m bot
 ```
 
-The local health endpoint is available at <http://localhost:10000/health> when `PORT=10000`.
+Test the local health endpoint at `http://localhost:10000/health`.
+
+---
 
 ## Run with Docker Compose
 
-Docker Desktop or Docker Engine with Compose is required.
-
 ```bash
 cp .env.example .env
-# Keep MONGO_URI=mongodb://mongo:27017/serena for the bundled MongoDB service.
 docker compose up --build
 ```
 
-Check the health endpoint:
-
+Test health:
 ```bash
 curl http://localhost:10000/health
 ```
 
-Stop the services:
-
-```bash
-docker compose down
-```
-
-MongoDB data is stored in the named `mongo-data` volume. Downloaded media is stored in the local `downloads/` directory and is cleaned up by the bot after delivery where applicable.
+---
 
 ## Deploy on Render as a Web Service
 
-Render Web Services expect an HTTP listener. SERENA starts a lightweight `aiohttp` health server and binds to `0.0.0.0:$PORT`, while the Telegram bot continues running in the same process.
-
-### Option A: Render Blueprint
+### Option A: Render Blueprint (One-Click)
 
 1. Push this repository to GitHub.
-2. Open the [Render Dashboard](https://dashboard.render.com/).
-3. Choose **New + → Blueprint** and select this repository.
-4. Render will read `render.yaml` and create the Docker-based web service.
-5. Open the service's **Environment** page and enter all `sync: false` values.
-6. Deploy and check `https://YOUR-SERVICE.onrender.com/health`.
+2. In [Render Dashboard](https://dashboard.render.com/), click **New + → Blueprint**.
+3. Select your repository.
+4. Fill in the `sync: false` environment secrets.
+5. Render deploys SERENA as a Docker Web Service on the Free plan.
 
-### Option B: Create the service manually
+### Option B: Manual Web Service
 
-1. Open [Render New Web Service](https://dashboard.render.com/select-repo?type=web).
-2. Connect `botstelegram7-cmyk/SERENA-DOWNLOADER`.
-3. Select branch `main`.
-4. Choose **Docker** as the runtime. The repository `Dockerfile` is used automatically.
-5. Set the health check path to `/health`.
-6. Add the environment variables from the table above, especially `API_ID`, `API_HASH`, `BOT_TOKEN`, `API_KEYS` (or `API_KEY`), `MONGO_URI`, `OWNER_ID`, and `SUDO_USERS`.
-7. Start the deployment. Do not override the Docker command; the image already runs `python -m bot`.
-8. Verify the service at:
+1. In Render Dashboard, click **New + → Web Service**.
+2. Connect your repository.
+3. Choose **Docker** runtime.
+4. Set **Health Check Path** to `/health`.
+5. Under **Environment**, configure all required variables (`API_ID`, `API_HASH`, `BOT_TOKEN`, `API_KEYS`, `MONGO_URI`, `OWNER_ID`, `SUDO_USERS`).
+6. Deploy the service.
 
-   ```text
-   https://YOUR-SERVICE-NAME.onrender.com/health
-   ```
+---
 
-Render supplies `PORT` at runtime. The application does not hard-code a public port and listens on `0.0.0.0`, so it is compatible with Render's web-service proxy.
+## Documentation & Guides
 
-### Render notes
+- 📘 [Architecture & Internals](docs/architecture.md) — Comprehensive deep dive into SERENA's module design and event flow.
+- 🚀 [Render Free Webhook Deployment](docs/render.md) — Step-by-step setup, auto-wake behavior, and troubleshooting.
+- 🤖 [BotFather & Clone Setup Guide](docs/botfather.md) — Enabling Bot Management Mode, `/setinline`, `/setinlinefeedback`, and `/empty` menu reset.
 
-- Use MongoDB Atlas for `MONGO_URI`; Render's Docker container does not include MongoDB.
-- The local filesystem of a Render service is ephemeral. SERENA treats downloaded media as temporary and removes it after sending where possible.
-- A free Render instance can sleep or restart. For continuous Telegram polling, use a plan/configuration that keeps the service running; the `/health` endpoint only satisfies the web-service HTTP requirement.
-- If deployment fails, open **Logs** and first check missing environment variables, MongoDB network access, the external `API_KEY`, and Telegram credentials.
+---
 
-## Updating the bot
-
-```bash
-git pull origin main
-git add .
-git commit -m "Describe your change"
-git push origin main
-```
-
-Render can automatically redeploy after a push if auto-deploy is enabled.
-
-## SERENA credits and branding
+## Credits and branding
 
 - Maintainer credit: [@TechnicalSerena](https://t.me/TechnicalSerena)
 - Official updates channel: [@serenaunzipbot](https://t.me/serenaunzipbot)
-- The SERENA logo in `bot/assets/serena_logo.png` is an AI-generated original brand asset and is intentionally different from the previous profile artwork.
-- The maintainer credit is hard-coded into the source branding, `/start` response, clone description, and health metadata. Anyone with write access to a source repository can technically modify code, so repository permissions and branch protection should be used for tamper resistance.
-
-## Security and legal notes
-
-- Treat `BOT_TOKEN`, `API_HASH`, `API_KEY`, `API_KEYS`, `MONGO_URI`, and clone-bot tokens as secrets.
-- If a secret is ever pasted into a chat or committed to Git, revoke/rotate it immediately and remove it from Git history where necessary.
-- Use the downloader only with content and services you are authorised to access. Respect each platform's terms, copyright rules, and Telegram policies.
-- The repository retains the MIT license in `LICENSE`. Review upstream attribution and licensing before redistributing a modified build.
+- The SERENA logo in `serena/assets/serena_logo.png` is an original circular brand asset optimized for Telegram avatars.
+- License: [MIT](LICENSE)

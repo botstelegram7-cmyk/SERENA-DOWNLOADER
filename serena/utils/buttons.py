@@ -1,6 +1,7 @@
 # Licensed under the MIT License.
 
 import re
+import urllib.parse
 
 from pyrogram.enums import ButtonStyle
 from pyrogram.types import (
@@ -8,9 +9,6 @@ from pyrogram.types import (
     InlineKeyboardMarkup,
     InlineQueryResultArticle,
     InputTextMessageContent,
-    KeyboardButton,
-    KeyboardButtonRequestManagedBot,
-    ReplyKeyboardMarkup,
 )
 
 from .. import LOGGER
@@ -77,15 +75,32 @@ class KeyboardBuilder:
 
         return InlineKeyboardMarkup(rows)
 
-    def start_keyboard(self, bot_username: str, lang: str = default_lang) -> InlineKeyboardMarkup:
-        return InlineKeyboardMarkup([
-            [InlineKeyboardButton(
+    def start_keyboard(
+        self,
+        bot_username: str,
+        lang: str = default_lang,
+        *,
+        can_manage_bots: bool = False,
+        user=None,
+    ) -> InlineKeyboardMarkup:
+        rows = []
+        if can_manage_bots and bot_username and user:
+            deep_link = build_clone_deep_link(bot_username, user)
+            rows.append([
+                InlineKeyboardButton(
+                    text("btn_clone_this_bot", lang),
+                    url=deep_link,
+                )
+            ])
+        rows.append([
+            InlineKeyboardButton(
                 text("btn_add_to_group", lang),
                 url=f"https://t.me/{bot_username}?startgroup=true",
                 style=ButtonStyle.PRIMARY,
-            )],
-            self.updates_channel_row(lang),
+            )
         ])
+        rows.append(self.updates_channel_row(lang))
+        return InlineKeyboardMarkup(rows)
 
     def lang_keyboard(self) -> InlineKeyboardMarkup:
         rows = []
@@ -129,24 +144,36 @@ async def render_clone_list(owner_id: int, lang: str = default_lang) -> tuple[st
 
 
 def suggest_clone_username(user) -> str:
-    base = re.sub(r"[^a-zA-Z0-9]", "", (user.first_name or "user")).lower()[:20] or "user"
-    return f"{base}_serena_bot"[:32]
+    raw_name = ""
+    if user:
+        raw_name = getattr(user, "username", None) or getattr(user, "first_name", None) or ""
+    clean = re.sub(r"[^a-zA-Z0-9]", "", raw_name).lower()[:12] or "user"
+    uid = getattr(user, "id", 0) if user else 0
+    suffix = f"{abs(uid) % 10000:04d}" if uid else "0001"
+    candidate = f"{clean}_{suffix}_bot"
+    if len(candidate) < 5:
+        candidate = f"serena_{candidate}"
+    return candidate[:32]
 
 
-def build_clone_keyboard(user, lang: str = default_lang) -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(
-        [[
-            KeyboardButton(
-                text("btn_clone_this_bot", lang),
-                request_managed_bot=KeyboardButtonRequestManagedBot(
-                    request_id=1,
-                    suggested_name=f"{(user.first_name or 'My').strip()}'s SERENA"[:64],
-                    suggested_username=suggest_clone_username(user),
-                ),
-            )
-        ]],
-        resize_keyboard=True,
-    )
+def suggest_clone_name(user) -> str:
+    first = (getattr(user, "first_name", "") or "My").strip()
+    return f"{first}'s SERENA"[:64]
+
+
+def build_clone_deep_link(manager_username: str, user) -> str:
+    suggested_uname = suggest_clone_username(user)
+    suggested_name = suggest_clone_name(user)
+    encoded_name = urllib.parse.quote(suggested_name)
+    return f"https://t.me/newbot/{manager_username}/{suggested_uname}?name={encoded_name}"
+
+
+def build_clone_keyboard(user, lang: str = default_lang, manager_username: str = "") -> InlineKeyboardMarkup:
+    """Return inline keyboard with clone deep link."""
+    deep_link = build_clone_deep_link(manager_username or "serena", user)
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(text("btn_clone_this_bot", lang), url=deep_link)]
+    ])
 
 
 class InlineSearch:

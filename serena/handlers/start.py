@@ -1,6 +1,5 @@
 # Licensed under the MIT License.
 
-
 from pyrogram import filters
 from pyrogram.handlers import MessageHandler
 from pyrogram.types import LinkPreviewOptions, Message
@@ -10,7 +9,7 @@ from ..core.client import app
 from ..core.config import config
 from ..core.mongo import mongo
 from ..local import text as t
-from ..utils.buttons import build_clone_keyboard, keyboards
+from ..utils.buttons import keyboards
 from . import start_registry as registry
 
 
@@ -26,20 +25,22 @@ async def start_cmd(client, message: Message):
     body += f"\n\nMaintained by {__maintainer__}"
     no_preview = LinkPreviewOptions(is_disabled=True)
 
-    if is_main:
-        can_manage_bots = bool(getattr(client.me, "can_manage_bots", False))
-        clone_hint = t("clone_hint_text", lang) if can_manage_bots else ""
-        await message.reply_text(
-            body + clone_hint,
-            reply_markup=build_clone_keyboard(user, lang) if user and can_manage_bots else None,
-            link_preview_options=no_preview,
-        )
-    else:
-        await message.reply_text(
-            body,
-            reply_markup=keyboards.start_keyboard(client.me.username or "", lang),
-            link_preview_options=no_preview,
-        )
+    can_manage = is_main and bool(getattr(client.me, "can_manage_bots", False))
+    if can_manage:
+        body += t("clone_hint_text", lang)
+
+    markup = keyboards.start_keyboard(
+        client.me.username or "",
+        lang=lang,
+        can_manage_bots=can_manage,
+        user=user,
+    )
+
+    await message.reply_text(
+        body,
+        reply_markup=markup,
+        link_preview_options=no_preview,
+    )
 
 
 @registry.on(MessageHandler, filters.command("privacy") & filters.private)

@@ -20,7 +20,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:${PATH}" \
     PORT=10000
 
-# ffmpeg and ffprobe are required by bot/dl/ffmpeg.py.
+# ffmpeg and ffprobe are required by serena/dl/ffmpeg.py.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg ca-certificates \
     && rm -rf /var/lib/apt/lists/* \

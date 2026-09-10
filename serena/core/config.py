@@ -84,6 +84,21 @@ class Config:
             "UPDATES_CHANNEL_URL", "https://t.me/serenaunzipbot"
         ).strip()
 
+        # Webhook configuration (for Render Free service auto-wake)
+        raw_path = os.getenv("WEBHOOK_PATH", "/telegram/webhook").strip() or "/telegram/webhook"
+        self.webhook_path = raw_path if raw_path.startswith("/") else f"/{raw_path}"
+        self.webhook_url = os.getenv("WEBHOOK_URL", "").strip()
+        self.webhook_secret = os.getenv("WEBHOOK_SECRET", "").strip()
+        self.render_external_url = os.getenv("RENDER_EXTERNAL_URL", "").strip()
+
+    @property
+    def effective_webhook_url(self) -> str | None:
+        if self.webhook_url:
+            return self.webhook_url.rstrip("/")
+        if self.render_external_url:
+            return f"{self.render_external_url.rstrip('/')}{self.webhook_path}"
+        return None
+
     def validate(self) -> None:
         missing: list[str] = []
         if self.api_id <= 0:
