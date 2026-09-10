@@ -48,13 +48,27 @@ Never commit `.env`, bot tokens, API hashes, API keys, or database passwords to 
 | `API_HASH` | Yes | Created beside `API_ID` in Telegram API development tools: [my.telegram.org/auth?to=apps](https://my.telegram.org/auth?to=apps) |
 | `BOT_TOKEN` | Yes | Create/manage the bot through Telegram's official [@BotFather](https://t.me/BotFather) |
 | `API_URL` | Yes | Existing media API endpoint: [api.arcmusic.fun](https://api.arcmusic.fun). Keep it unchanged unless you have a compatible replacement. |
-| `API_KEY` | Yes | The API requires this query parameter. See its [interactive API docs](https://api.arcmusic.fun/docs); obtain the actual key from the API owner/operator. It is not a Telegram token and is not issued by Render. |
+| `API_KEY` | Yes | Create an account at the [Arc API portal](https://portal.arcmusic.fun/register), choose a plan at [Plans](https://portal.arcmusic.fun/plans), then copy the key from [Usage](https://portal.arcmusic.fun/usage). It is not a Telegram token. |
 | `MONGO_URI` | Yes | Create a MongoDB database at [MongoDB Atlas](https://www.mongodb.com/atlas/database), then copy its connection string. |
 | `OWNER_ID` | Yes | Your numeric Telegram user ID. You can retrieve it through a trusted Telegram user-ID bot such as [@userinfobot](https://t.me/userinfobot). |
 | `SUDO_USERS` | Yes | Comma-separated numeric Telegram user IDs allowed to use admin commands. `OWNER_ID` is added automatically. |
 | `UPDATES_CHANNEL_URL` | Optional | Your own Telegram updates channel URL, for example `https://t.me/your_channel`. |
 | `APP_NAME` | Optional | Keep this as `SERENA` for the current branding. |
 | `HOST` / `PORT` | Managed | Local defaults are `0.0.0.0` and `10000`. Render injects `PORT` automatically. |
+
+### Arc API key setup
+
+The API key is **not generated inside Swagger**. Swagger's `Try it out` button only tests an already-issued key. Generate/manage the key from the Arc API portal:
+
+1. Open the direct [Create account page](https://portal.arcmusic.fun/register).
+2. Register with email/password or choose **Continue with Google**.
+3. Sign in at the [Arc API login page](https://portal.arcmusic.fun/login).
+4. Open [Plans](https://portal.arcmusic.fun/plans) and select a plan. A free tier is available for testing.
+5. After activating the plan, open the [Usage page](https://portal.arcmusic.fun/usage).
+6. Copy the API key shown there and set it in Render as `API_KEY`.
+7. If the key is leaked, regenerate it from the Usage page and update Render.
+
+Keep `API_URL` as `https://api.arcmusic.fun` unless you are using another compatible API server. The API's interactive documentation is at [portal.arcmusic.fun/docs](https://portal.arcmusic.fun/docs).
 
 ### Telegram setup
 
