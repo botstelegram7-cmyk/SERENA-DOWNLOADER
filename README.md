@@ -15,18 +15,37 @@ The repository includes a health endpoint for Render, Docker Compose for local d
 
 > **Important:** `API_URL=https://api.arcmusic.fun` is the external media API dependency used by this code. The hostname is intentionally unchanged because it is an API endpoint, not the SERENA brand. You need an active Arc API plan and at least one valid API key.
 
+| Runtime | Deployment | Storage | Media engine | Health check |
+|---|---|---|---|---|
+| Python 3.12 + PyroTGFork | Docker / Render Web Service | MongoDB Atlas | FFmpeg | `/health` |
+
+<details>
+<summary><strong>Table of contents</strong></summary>
+
+- [Features](#features)
+- [Repository structure](#repository-structure)
+- [Credentials](#credentials-where-to-get-each-value)
+- [Arc API key setup](#arc-api-key-setup)
+- [Free plan limitations](#free-arc-api-plan-limitations)
+- [Multiple API keys](#multiple-api-keys-and-automatic-failover)
+- [Clone setup](#enable-the-clone-this-bot-button)
+- [Local setup](#environment-setup)
+- [Docker Compose](#run-with-docker-compose)
+- [Render deployment](#deploy-on-render-as-a-web-service)
+- [Credits and branding](#serena-credits-and-branding)
+
+</details>
+
 ## Features
 
-- YouTube search, tracks, and playlists
-- Spotify, SoundCloud, Apple Music, and JioSaavn support
-- Instagram, Facebook, Threads, Bluesky, TikTok, Twitter/X, Pinterest, Reddit, and Terabox flows
-- Telegram inline mode and group support
-- Multi-language catalog: English, Spanish, Burmese, and Russian
-- MongoDB-backed users, languages, and clone-bot records
-- FFmpeg conversion and media delivery
-- Docker and Docker Compose support
-- Render-compatible HTTP health server at `/health`
-- Configurable update-channel button and download directory
+| Area | Included |
+|---|---|
+| Media | YouTube search/tracks/playlists, Spotify, SoundCloud, Apple Music, JioSaavn, and social links |
+| Delivery | Telegram private chats, groups, inline mode, playlists, media groups, thumbnails, and FFmpeg conversion |
+| Operations | MongoDB-backed users/clones, admin stats/broadcast tools, language preferences, and temporary downloads |
+| Reliability | Arc API key rotation/failover, retries, job polling, and clear error handling |
+| Deployment | Docker, Docker Compose, Render Web Service, `/health` and `/healthz` endpoints |
+| Branding | AI-generated SERENA logo, `@TechnicalSerena` maintainer credit, and `@serenaunzipbot` updates channel |
 
 ## Repository structure
 
@@ -92,6 +111,8 @@ The public Arc API documentation confirms that plans have:
 
 The exact numeric free-tier quotas are account/plan data shown after signing in on [Plans](https://portal.arcmusic.fun/plans) and [Usage](https://portal.arcmusic.fun/usage); they are not exposed as a fixed number in the public API docs. Do not rely on an old screenshot because the provider can change plan limits.
 
+> **Quota vs plan validity:** a daily quota reset does not mean the plan itself is permanent. The public documentation confirms the daily reset window, but it does not publicly state that the free tier is one-time-only or exactly 30 days. Check the plan status and expiry shown inside your authenticated [Usage](https://portal.arcmusic.fun/usage) page; that page is authoritative for your account.
+
 ### Multiple API keys and automatic failover
 
 You can configure more than one key. The bot tries the current key first and moves to the next configured key after repeated API/auth/quota errors (`401`, `403`, `429`) or transport failures. Request/content errors such as an invalid link are returned without blindly rotating through every key.
@@ -115,6 +136,18 @@ API_KEYS=first_key,second_key,third_key
 3. Open [Telegram API development tools](https://my.telegram.org/auth?to=apps), sign in, create an application, and copy `API_ID` and `API_HASH`.
 4. Send a message to your bot once it is online and confirm your numeric Telegram ID for `OWNER_ID`.
 5. If clone-bot features are enabled, follow the bot's `/start` instructions and complete the manual inline-mode steps in @BotFather.
+
+### Enable the `Clone this bot` button
+
+Telegram only allows `request_managed_bot` buttons for bots with **Bot Management Mode** enabled. Without this one-time Telegram setting, tapping the button shows `This bot doesn't support bot management mode`.
+
+1. Open [@BotFather](https://t.me/BotFather) and send `/mybots`.
+2. Select the SERENA manager bot.
+3. Open its **Bot Settings** in the BotFather Mini App.
+4. Enable **Bot Management Mode**.
+5. Restart/redeploy SERENA, then open a private chat and send `/start` again.
+
+SERENA now checks Telegram's `can_manage_bots` capability. If management mode is disabled, it hides the clone button instead of displaying a misleading button that will fail.
 
 ### MongoDB Atlas setup
 

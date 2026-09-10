@@ -27,9 +27,11 @@ async def start_cmd(client, message: Message):
     no_preview = LinkPreviewOptions(is_disabled=True)
 
     if is_main:
+        can_manage_bots = bool(getattr(client.me, "can_manage_bots", False))
+        clone_hint = t("clone_hint_text", lang) if can_manage_bots else ""
         await message.reply_text(
-            body + t("clone_hint_text", lang),
-            reply_markup=build_clone_keyboard(user, lang) if user else None,
+            body + clone_hint,
+            reply_markup=build_clone_keyboard(user, lang) if user and can_manage_bots else None,
             link_preview_options=no_preview,
         )
     else:

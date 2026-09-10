@@ -22,6 +22,10 @@ async def main() -> None:
         await yt_api.get_session()
         await app.start()
         app_started = True
+        LOGGER.info(
+            "Bot Management Mode: %s",
+            "enabled" if getattr(app.me, "can_manage_bots", False) else "disabled",
+        )
 
         from . import handlers
 
