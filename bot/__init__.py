@@ -3,8 +3,9 @@
 import logging
 import sys
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 __bot_name__ = "SERENA"
+__maintainer__ = "@TechnicalSerena"
 
 logging.basicConfig(
     level=logging.INFO,

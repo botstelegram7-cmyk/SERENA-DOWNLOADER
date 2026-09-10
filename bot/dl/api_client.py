@@ -19,6 +19,7 @@ class YTAPIError(Exception):
 class YTAPIClient:
     def __init__(self):
         self._session: aiohttp.ClientSession | None = None
+        self._key_cursor = 0
         self.request_timeout = 60.0
         self.request_retries = 2
         self.job_poll_interval = 2.0
@@ -51,43 +52,84 @@ class YTAPIClient:
             LOGGER.info("YTAPIClient session closed.")
         self._session = None
 
+    def _next_api_key(self) -> str:
+        keys = config.api_keys
+        if not keys:
+            return ""
+        key = keys[self._key_cursor % len(keys)]
+        self._key_cursor += 1
+        return key
+
     async def _get(self, path: str, params: dict) -> dict:
         session = await self._get_session()
-        clean_params = {
+        base_params = {
             k: ("true" if v else "false") if isinstance(v, bool) else v
             for k, v in params.items()
         }
-        clean_params["api_key"] = config.api_key
         url = f"{config.api_url}{path}"
         timeout = aiohttp.ClientTimeout(total=self.request_timeout)
+        api_keys = config.api_keys
+
+        if not api_keys:
+            raise YTAPIError("No Arc API key is configured")
 
         last_error: Exception | None = None
-        for attempt in range(1, self.request_retries + 1):
-            try:
-                async with session.get(url, params=clean_params, timeout=timeout) as r:
-                    try:
-                        data = await r.json()
-                    except Exception:
-                        text = await r.text()
-                        raise YTAPIError(f"Non-JSON response ({r.status}): {text[:200]}", status=r.status)
+        total_keys = len(api_keys)
 
-                    if r.status != 200:
-                        detail = data.get("detail") if isinstance(data, dict) else data
-                        raise YTAPIError(str(detail) or f"HTTP {r.status}", status=r.status)
+        # A 401/403/429 or repeated transport failure moves to the next key.
+        # 400/404/422 are request/content errors and are returned immediately.
+        for key_attempt in range(total_keys):
+            api_key = self._next_api_key()
+            for attempt in range(1, self.request_retries + 1):
+                clean_params = {**base_params, "api_key": api_key}
+                try:
+                    async with session.get(url, params=clean_params, timeout=timeout) as r:
+                        try:
+                            data = await r.json()
+                        except Exception:
+                            response_text = await r.text()
+                            raise YTAPIError(
+                                f"Non-JSON response ({r.status}): {response_text[:200]}",
+                                status=r.status,
+                            )
 
-                    return data
-            except (asyncio.TimeoutError, aiohttp.ClientError) as e:
-                last_error = e
-                if attempt < self.request_retries:
-                    LOGGER.warning(
-                        "Request to %s timed out/failed (attempt %d/%d), retrying...",
-                        path, attempt, self.request_retries,
-                    )
-                    await asyncio.sleep(1.5)
-                    continue
-                raise YTAPIError(f"Request to {path} failed after {self.request_retries} attempts: {e}") from e
+                        if r.status != 200:
+                            detail = data.get("detail") if isinstance(data, dict) else data
+                            raise YTAPIError(str(detail) or f"HTTP {r.status}", status=r.status)
 
-        raise YTAPIError(f"Request to {path} failed: {last_error}")
+                        return data
+                except YTAPIError as exc:
+                    last_error = exc
+                    if exc.status in {400, 404, 422}:
+                        raise
+                    if attempt < self.request_retries:
+                        LOGGER.warning(
+                            "Arc API request failed for %s (attempt %d/%d, status=%s); retrying key",
+                            path, attempt, self.request_retries, exc.status,
+                        )
+                        await asyncio.sleep(1.5)
+                        continue
+                    break
+                except (asyncio.TimeoutError, aiohttp.ClientError) as exc:
+                    last_error = exc
+                    if attempt < self.request_retries:
+                        LOGGER.warning(
+                            "Request to %s timed out/failed (attempt %d/%d); retrying key",
+                            path, attempt, self.request_retries,
+                        )
+                        await asyncio.sleep(1.5)
+                        continue
+                    break
+
+            if key_attempt < total_keys - 1:
+                LOGGER.warning(
+                    "Arc API key attempt %d/%d failed for %s; trying the next configured key",
+                    key_attempt + 1, total_keys, path,
+                )
+
+        if isinstance(last_error, YTAPIError):
+            raise last_error
+        raise YTAPIError(f"Request to {path} failed with all configured API keys: {last_error}")
 
     async def search_youtube(self, query: str, limit: int = 5) -> list[dict]:
         data = await self._get("/youtube/v2/search", {"query": query, "limit": limit})

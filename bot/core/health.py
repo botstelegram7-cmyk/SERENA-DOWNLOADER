@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from aiohttp import web
 
-from .. import LOGGER, __bot_name__, __version__
+from .. import LOGGER, __bot_name__, __maintainer__, __version__
 from .config import config
 
 
@@ -41,6 +41,7 @@ class HealthServer:
                 "service": __bot_name__,
                 "status": "ok",
                 "version": __version__,
+                "maintainer": __maintainer__,
                 "health": "/health",
             }
         )
@@ -48,7 +49,12 @@ class HealthServer:
     @staticmethod
     async def _health(_request: web.Request) -> web.Response:
         return web.json_response(
-            {"status": "ok", "service": __bot_name__, "version": __version__}
+            {
+                "status": "ok",
+                "service": __bot_name__,
+                "version": __version__,
+                "maintainer": __maintainer__,
+            }
         )
 
 

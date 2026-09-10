@@ -5,6 +5,7 @@ from pyrogram import filters
 from pyrogram.handlers import MessageHandler
 from pyrogram.types import LinkPreviewOptions, Message
 
+from .. import __maintainer__
 from ..core.client import app
 from ..core.config import config
 from ..core.mongo import mongo
@@ -22,6 +23,7 @@ async def start_cmd(client, message: Message):
 
     is_main = client.me.id == config.bot_id
     body = t("start_text", lang, bot_name=client.me.first_name, bot_username=client.me.username or "")
+    body += f"\n\nMaintained by {__maintainer__}"
     no_preview = LinkPreviewOptions(is_disabled=True)
 
     if is_main:

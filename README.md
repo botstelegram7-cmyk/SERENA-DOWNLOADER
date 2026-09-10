@@ -1,10 +1,19 @@
 # SERENA
 
-A Telegram media downloader bot built with **Pyrogram**, **MongoDB**, **FFmpeg**, and an external media API. SERENA can search for music and process supported media links directly inside Telegram, including inline mode and clone-bot management.
+[![Docker Ready](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
+[![Render Deploy](https://img.shields.io/badge/Deploy-Render-46E3B7?logo=render&logoColor=111827)](render.yaml)
+[![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-22c55e)](LICENSE)
+[![Telegram](https://img.shields.io/badge/Telegram-@serenaunzipbot-26A5E4?logo=telegram&logoColor=white)](https://t.me/serenaunzipbot)
+[![Maintained by](https://img.shields.io/badge/Maintained%20by-%40TechnicalSerena-8b5cf6)](https://t.me/TechnicalSerena)
 
-The repository includes a Docker image, a Render Web Service health endpoint, Docker Compose for local development, and a safe `.env.example` template.
+![SERENA logo](bot/assets/serena_logo.png)
 
-> **Important:** `API_URL=https://api.arcmusic.fun` is the existing external media API endpoint used by this code. The hostname is intentionally unchanged because it is an API dependency, not the SERENA brand. You must have a valid API key from that API provider or use a compatible API with the same endpoints.
+**SERENA** is a production-oriented Telegram media downloader built with **PyroTGFork**, **MongoDB**, **FFmpeg**, and the Arc media API. It supports search, supported platform links, inline mode, clone bots, Docker, and Render Web Services.
+
+The repository includes a health endpoint for Render, Docker Compose for local development, multi-key API failover, a professional `.env.example`, and a generated SERENA brand asset.
+
+> **Important:** `API_URL=https://api.arcmusic.fun` is the external media API dependency used by this code. The hostname is intentionally unchanged because it is an API endpoint, not the SERENA brand. You need an active Arc API plan and at least one valid API key.
 
 ## Features
 
@@ -24,7 +33,7 @@ The repository includes a Docker image, a Render Web Service health endpoint, Do
 ```text
 .
 ├── bot/
-│   ├── assets/       # Profile artwork and static assets
+│   ├── assets/       # AI-generated SERENA logo and static assets
 │   ├── core/         # Config, Telegram client, MongoDB, clones, health server
 │   ├── dl/           # API client, download and media-delivery flows
 │   ├── handlers/     # Telegram message, callback, inline and admin handlers
@@ -48,7 +57,8 @@ Never commit `.env`, bot tokens, API hashes, API keys, or database passwords to 
 | `API_HASH` | Yes | Created beside `API_ID` in Telegram API development tools: [my.telegram.org/auth?to=apps](https://my.telegram.org/auth?to=apps) |
 | `BOT_TOKEN` | Yes | Create/manage the bot through Telegram's official [@BotFather](https://t.me/BotFather) |
 | `API_URL` | Yes | Existing media API endpoint: [api.arcmusic.fun](https://api.arcmusic.fun). Keep it unchanged unless you have a compatible replacement. |
-| `API_KEY` | Yes | Create an account at the [Arc API portal](https://portal.arcmusic.fun/register), choose a plan at [Plans](https://portal.arcmusic.fun/plans), then copy the key from [Usage](https://portal.arcmusic.fun/usage). It is not a Telegram token. |
+| `API_KEY` | One of these | Single-key compatibility option. Create an account at the [Arc API portal](https://portal.arcmusic.fun/register), choose a plan at [Plans](https://portal.arcmusic.fun/plans), then copy the key from [Usage](https://portal.arcmusic.fun/usage). |
+| `API_KEYS` | Recommended | Comma-separated backup keys, for example `key_one,key_two,key_three`. When set, it takes priority over `API_KEY`; the bot fails over after key/auth/quota or transport errors. |
 | `MONGO_URI` | Yes | Create a MongoDB database at [MongoDB Atlas](https://www.mongodb.com/atlas/database), then copy its connection string. |
 | `OWNER_ID` | Yes | Your numeric Telegram user ID. You can retrieve it through a trusted Telegram user-ID bot such as [@userinfobot](https://t.me/userinfobot). |
 | `SUDO_USERS` | Yes | Comma-separated numeric Telegram user IDs allowed to use admin commands. `OWNER_ID` is added automatically. |
@@ -65,10 +75,38 @@ The API key is **not generated inside Swagger**. Swagger's `Try it out` button o
 3. Sign in at the [Arc API login page](https://portal.arcmusic.fun/login).
 4. Open [Plans](https://portal.arcmusic.fun/plans) and select a plan. A free tier is available for testing.
 5. After activating the plan, open the [Usage page](https://portal.arcmusic.fun/usage).
-6. Copy the API key shown there and set it in Render as `API_KEY`.
+6. Copy the API key shown there and set it in Render as `API_KEY` or `API_KEYS`.
 7. If the key is leaked, regenerate it from the Usage page and update Render.
 
 Keep `API_URL` as `https://api.arcmusic.fun` unless you are using another compatible API server. The API's interactive documentation is at [portal.arcmusic.fun/docs](https://portal.arcmusic.fun/docs).
+
+### Free Arc API plan limitations
+
+The public Arc API documentation confirms that plans have:
+
+- A daily total request limit.
+- A separate daily video-download limit.
+- Both limits reset at **midnight UTC**, so the quota is daily, not monthly.
+- `429 Too Many Requests` when a daily request/video limit is reached.
+- `403 Forbidden` for an invalid/deactivated key, an inactive plan, or an expired plan.
+
+The exact numeric free-tier quotas are account/plan data shown after signing in on [Plans](https://portal.arcmusic.fun/plans) and [Usage](https://portal.arcmusic.fun/usage); they are not exposed as a fixed number in the public API docs. Do not rely on an old screenshot because the provider can change plan limits.
+
+### Multiple API keys and automatic failover
+
+You can configure more than one key. The bot tries the current key first and moves to the next configured key after repeated API/auth/quota errors (`401`, `403`, `429`) or transport failures. Request/content errors such as an invalid link are returned without blindly rotating through every key.
+
+Use one of these formats:
+
+```env
+# Single key
+API_KEY=your_arc_api_key
+
+# Recommended: comma-separated fallback keys
+API_KEYS=first_key,second_key,third_key
+```
+
+`API_KEYS` takes priority over `API_KEY`. You may also use dashboard-friendly variables such as `API_KEY_1`, `API_KEY_2`, and so on. Only use keys you own or are authorised to use; multiple keys should be for reliability, not for bypassing Arc API plan limits.
 
 ### Telegram setup
 
@@ -169,7 +207,7 @@ Render Web Services expect an HTTP listener. SERENA starts a lightweight `aiohtt
 3. Select branch `main`.
 4. Choose **Docker** as the runtime. The repository `Dockerfile` is used automatically.
 5. Set the health check path to `/health`.
-6. Add the environment variables from the table above, especially `API_ID`, `API_HASH`, `BOT_TOKEN`, `API_KEY`, `MONGO_URI`, `OWNER_ID`, and `SUDO_USERS`.
+6. Add the environment variables from the table above, especially `API_ID`, `API_HASH`, `BOT_TOKEN`, `API_KEYS` (or `API_KEY`), `MONGO_URI`, `OWNER_ID`, and `SUDO_USERS`.
 7. Start the deployment. Do not override the Docker command; the image already runs `python -m bot`.
 8. Verify the service at:
 
@@ -197,9 +235,16 @@ git push origin main
 
 Render can automatically redeploy after a push if auto-deploy is enabled.
 
+## SERENA credits and branding
+
+- Maintainer credit: [@TechnicalSerena](https://t.me/TechnicalSerena)
+- Official updates channel: [@serenaunzipbot](https://t.me/serenaunzipbot)
+- The SERENA logo in `bot/assets/serena_logo.png` is an AI-generated original brand asset and is intentionally different from the previous profile artwork.
+- The maintainer credit is hard-coded into the source branding, `/start` response, clone description, and health metadata. Anyone with write access to a source repository can technically modify code, so repository permissions and branch protection should be used for tamper resistance.
+
 ## Security and legal notes
 
-- Treat `BOT_TOKEN`, `API_HASH`, `API_KEY`, `MONGO_URI`, and clone-bot tokens as secrets.
+- Treat `BOT_TOKEN`, `API_HASH`, `API_KEY`, `API_KEYS`, `MONGO_URI`, and clone-bot tokens as secrets.
 - If a secret is ever pasted into a chat or committed to Git, revoke/rotate it immediately and remove it from Git history where necessary.
 - Use the downloader only with content and services you are authorised to access. Respect each platform's terms, copyright rules, and Telegram policies.
 - The repository retains the MIT license in `LICENSE`. Review upstream attribution and licensing before redistributing a modified build.

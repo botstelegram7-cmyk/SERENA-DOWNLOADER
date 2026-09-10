@@ -19,6 +19,8 @@ services:
         value: https://api.arcmusic.fun
       - key: API_KEY
         sync: false
+      - key: API_KEYS
+        sync: false
       - key: MONGO_URI
         sync: false
       - key: MONGO_DB

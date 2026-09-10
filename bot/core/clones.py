@@ -4,7 +4,7 @@ import os
 
 from pyrogram import Client, raw
 
-from .. import LOGGER
+from .. import LOGGER, __maintainer__
 from .config import config
 from .mongo import mongo
 
@@ -14,7 +14,7 @@ class CloneManager:
         self.active: dict[int, Client] = {}
         self.profile_photo_path = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
-            "assets", "serena_profile_icon.png",
+            "assets", "serena_logo.png",
         )
         self.bot_short_description = (
             "SERENA downloads music and media from YouTube, Spotify, SoundCloud, "
@@ -26,7 +26,8 @@ class CloneManager:
             "it and send it right back to you.\n\n"
             "Works in groups and inline too.\n\n"
             "Powered by the open-source SERENA downloader: "
-            "github.com/botstelegram7-cmyk/SERENA-DOWNLOADER"
+            "github.com/botstelegram7-cmyk/SERENA-DOWNLOADER\n"
+            f"Maintained by {__maintainer__}"
         )
 
     async def load_all(self) -> None:
