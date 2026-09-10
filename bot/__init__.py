@@ -1,12 +1,11 @@
 # Copyright (c) 2026 tusar404
 # Licensed under the MIT License.
 
-
 import logging
 import sys
 
-__version__ = "1.0.0"
-__bot_name__ = "Arc Downloader"
+__version__ = "1.1.0"
+__bot_name__ = "SERENA"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,10 +18,10 @@ logging.getLogger("pyrogram").setLevel(logging.WARNING)
 logging.getLogger("pymongo").setLevel(logging.WARNING)
 logging.getLogger("aiohttp").setLevel(logging.WARNING)
 
-LOGGER = logging.getLogger("arcdl")
+LOGGER = logging.getLogger("serena")
 LOGGER.info("%s v%s initializing...", __bot_name__, __version__)
 
-from .core import app, config, mongo, setup_directories
+from .core import app, config, health_server, mongo, setup_directories
 from .utils import (
     cache,
     classifier,

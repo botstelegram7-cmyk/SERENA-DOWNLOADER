@@ -8,7 +8,7 @@ from pyrogram.types import Message
 from ..dl.actions import run_download
 from ..dl.api_client import YTAPIError, yt_api
 from ..dl.terabox_flow import terabox_flow
-from ..locale import text as t
+from ..local import text as t
 from .buttons import keyboards
 from .helper import cache
 

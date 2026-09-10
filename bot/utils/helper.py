@@ -15,7 +15,7 @@ from pyrogram.types import Message
 from .. import LOGGER
 from ..core.config import config
 from ..core.mongo import mongo
-from ..locale import default_lang, text as t
+from ..local import default_lang, text as t
 
 
 class MojibakeFixer:

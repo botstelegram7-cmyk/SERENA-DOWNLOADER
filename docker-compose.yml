@@ -1,30 +1,29 @@
-# Copyright (c) 2026 tusar404
-# Licensed under the MIT License.
-#
-# Using an external Mongo (e.g. Atlas) instead of the bundled "mongo"
-# service below? Two steps:
-#   1. Set MONGO_URI in .env to your external connection string
-#      (e.g. mongodb+srv://user:pass@cluster.mongodb.net/arcdlbot).
-#   2. Delete the "mongo" service block and the "depends_on" lines
-#      under "bot" below — the bot only ever talks to whatever
-#      MONGO_URI points at, so the local container becomes redundant.
-
 services:
-  bot:
-    build: .
+  serena:
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
       - .env
+    ports:
+      - "${PORT:-10000}:${PORT:-10000}"
     volumes:
       - ./downloads:/app/downloads
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
 
   mongo:
-    image: mongo:7
+    image: mongo:7-jammy
     restart: unless-stopped
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' localhost:27017/test | grep 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 volumes:
   mongo-data:

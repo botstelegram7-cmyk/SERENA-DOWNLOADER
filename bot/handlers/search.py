@@ -11,7 +11,7 @@ from .. import LOGGER
 from ..core.client import app
 from ..core.mongo import mongo
 from ..dl.api_client import YTAPIError
-from ..locale import text as t
+from ..local import text as t
 from ..utils.classifier import classifier
 from ..utils.helper import not_command_filter
 from ..utils.search_flow import dispatch_query

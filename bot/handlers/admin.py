@@ -9,7 +9,7 @@ from pyrogram.types import Message
 from ..core.client import app
 from ..core.clones import clones
 from ..core.mongo import mongo
-from ..locale import text as t
+from ..local import text as t
 from ..utils.buttons import keyboards
 from ..utils.helper import (
     admin_filter,

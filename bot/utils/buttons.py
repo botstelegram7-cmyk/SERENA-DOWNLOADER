@@ -16,8 +16,9 @@ from pyrogram.types import (
 
 from .. import LOGGER
 from ..core.clones import clones
+from ..core.config import config
 from ..core.mongo import mongo
-from ..locale import default_lang, language_names, supported_langs, text
+from ..local import default_lang, language_names, supported_langs, text
 from .classifier import classifier
 from .helper import truncate
 
@@ -25,7 +26,7 @@ from .helper import truncate
 class KeyboardBuilder:
     def __init__(self):
         self.playlist_page_size = 8
-        self.updates_channel_url = "https://t.me/ArcUpdates"
+        self.updates_channel_url = config.updates_channel_url
 
     def updates_channel_row(self, lang: str = default_lang) -> list[InlineKeyboardButton]:
         return [InlineKeyboardButton(text("btn_updates_channel", lang), url=self.updates_channel_url)]
@@ -130,7 +131,7 @@ async def render_clone_list(owner_id: int, lang: str = default_lang) -> tuple[st
 
 def suggest_clone_username(user) -> str:
     base = re.sub(r"[^a-zA-Z0-9]", "", (user.first_name or "user")).lower()[:20] or "user"
-    return f"{base}_arc_downloader_bot"[:32]
+    return f"{base}_serena_bot"[:32]
 
 
 def build_clone_keyboard(user, lang: str = default_lang) -> ReplyKeyboardMarkup:
@@ -139,8 +140,8 @@ def build_clone_keyboard(user, lang: str = default_lang) -> ReplyKeyboardMarkup:
             KeyboardButton(
                 text("btn_clone_this_bot", lang),
                 request_managed_bot=KeyboardButtonRequestManagedBot(
-                    button_id=1,
-                    suggested_name=f"{(user.first_name or 'My').strip()}'s Arc Downloader"[:64],
+                    request_id=1,
+                    suggested_name=f"{(user.first_name or 'My').strip()}'s SERENA"[:64],
                     suggested_username=suggest_clone_username(user),
                 ),
             )

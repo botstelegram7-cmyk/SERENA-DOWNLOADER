@@ -9,7 +9,7 @@ from pyrogram.types import CallbackQuery
 from ..core.client import app
 from ..core.mongo import mongo
 from ..dl.actions import run_download
-from ..locale import text as t
+from ..local import text as t
 from ..utils.buttons import keyboards
 from ..utils.helper import cache
 from . import callback_registry as registry

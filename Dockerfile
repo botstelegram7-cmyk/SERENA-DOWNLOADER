@@ -1,20 +1,42 @@
-# Copyright (c) 2026 tusar404
-# Licensed under the MIT License.
+# syntax=docker/dockerfile:1
+
+FROM python:3.12-slim AS builder
+
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="${VIRTUAL_ENV}/bin:${PATH}"
+
+RUN python -m venv "${VIRTUAL_ENV}"
+
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
 FROM python:3.12-slim
 
-# ffmpeg provides both ffmpeg and ffprobe, both required by bot/dl/ffmpeg.py
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg && \
-    rm -rf /var/lib/apt/lists/*
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:${PATH}" \
+    PORT=10000
+
+# ffmpeg and ffprobe are required by bot/dl/ffmpeg.py.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 10001 --shell /usr/sbin/nologin serena
 
 WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -U -r requirements.txt
-
+COPY --from=builder /opt/venv /opt/venv
 COPY . .
 
-RUN mkdir -p downloads
+# The bot writes temporary media and its runtime data here.
+RUN mkdir -p downloads \
+    && chown -R serena:serena /app
 
-CMD ["python3", "-m", "bot"]
+USER serena
+
+# Render injects PORT at runtime; this documents the local default.
+EXPOSE 10000
+
+CMD ["python", "-m", "bot"]

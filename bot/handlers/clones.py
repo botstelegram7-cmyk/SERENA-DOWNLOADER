@@ -10,7 +10,7 @@ from .. import LOGGER
 from ..core.client import app
 from ..core.clones import clones
 from ..core.mongo import mongo
-from ..locale import text as t
+from ..local import text as t
 from ..utils.buttons import render_clone_list
 from . import clones_registry as registry
 
@@ -70,7 +70,7 @@ async def managed_bot_created(client, managed_bot: ManagedBotUpdated):
     lang = await mongo.get_lang(owner.id)
 
     try:
-        token = await client.get_managed_bot_token(bot.id)
+        token = await clones.get_managed_bot_token(client, bot.id)
     except Exception:
         LOGGER.exception("Failed to export token for managed bot_id=%s", bot.id)
         return

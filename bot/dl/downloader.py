@@ -15,7 +15,8 @@ from pyrogram.errors import RPCError
 from pyrogram.types import InputMediaAudio, InputMediaDocument, InputMediaPhoto, InputMediaVideo
 
 from .. import LOGGER
-from ..locale import default_lang
+from ..core.config import config
+from ..local import default_lang
 from ..utils.buttons import keyboards
 from ..utils.helper import duration_to_seconds, guess_kind_from_ext, sanitize_filename
 from .ffmpeg import ensure_audio, probe_video_meta
@@ -253,7 +254,9 @@ class MediaDownloader:
         caption = title or ""
         if artist:
             caption += f"\n{artist}"
-        caption += "\n\n@ArcUpdates"
+        updates_handle = config.updates_channel_url.rstrip("/").rsplit("/", 1)[-1].lstrip("@")
+        if updates_handle and not updates_handle.startswith(("+", "joinchat")):
+            caption += f"\n\n@{updates_handle}"
         return caption
 
     async def _fetch_and_prepare(

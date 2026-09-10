@@ -12,7 +12,7 @@ from ..core.mongo import mongo
 from ..dl.actions import resolve_cdn
 from ..dl.api_client import YTAPIError
 from ..dl.downloader import downloader
-from ..locale import text as t
+from ..local import text as t
 from ..utils.buttons import inline_search
 from ..utils.classifier import classifier
 from ..utils.helper import cache

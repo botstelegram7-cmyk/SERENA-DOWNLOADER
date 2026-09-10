@@ -5,7 +5,7 @@
 from pyrogram import Client
 
 from .. import LOGGER
-from ..locale import default_lang, text as t
+from ..local import default_lang, text as t
 from ..utils.classifier import classifier
 from ..utils.helper import cache, mojibake_fixer, status_reporter
 from .api_client import YTAPIError, yt_api

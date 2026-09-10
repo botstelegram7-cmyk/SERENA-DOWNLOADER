@@ -8,13 +8,13 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ReturnDocument
 
 from .. import LOGGER
-from ..locale import default_lang, normalize_lang
+from ..local import default_lang, normalize_lang
 from .config import config
 
 
 class MongoDB:
     def __init__(self):
-        self.db_name = "arc"
+        self.db_name = config.mongo_db
         self.client = AsyncIOMotorClient(config.mongo_uri)
         self.db = self.client[self.db_name]
         self.users = self.db["users"]

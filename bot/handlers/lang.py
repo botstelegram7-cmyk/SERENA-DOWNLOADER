@@ -8,7 +8,7 @@ from pyrogram.types import CallbackQuery, Message
 
 from ..core.client import app
 from ..core.mongo import mongo
-from ..locale import language_names, text as t
+from ..local import language_names, text as t
 from ..utils.buttons import keyboards
 from . import lang_registry as registry
 

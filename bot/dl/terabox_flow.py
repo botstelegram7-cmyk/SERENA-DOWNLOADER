@@ -6,7 +6,7 @@ import asyncio
 from pyrogram import Client
 
 from .. import LOGGER
-from ..locale import default_lang, text as t
+from ..local import default_lang, text as t
 from ..utils.buttons import terabox_presenter
 from ..utils.helper import status_reporter
 from .api_client import YTAPIError, yt_api

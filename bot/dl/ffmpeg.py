@@ -56,10 +56,10 @@ async def ensure_audio(input_path: str) -> tuple[str, str]:
     base, _ = os.path.splitext(input_path)
 
     if codec == "opus":
-        output_path = f"{base}.arcconv.ogg"
+        output_path = f"{base}.serenaconv.ogg"
         args = ["-y", "-i", input_path, "-vn", "-c:a", "copy", output_path]
     else:
-        output_path = f"{base}.arcconv.mp3"
+        output_path = f"{base}.serenaconv.mp3"
         args = ["-y", "-i", input_path, "-vn", "-acodec", "libmp3lame", "-b:a", "192k", output_path]
 
     proc = await asyncio.create_subprocess_exec(

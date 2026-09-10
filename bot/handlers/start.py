@@ -9,7 +9,7 @@ from pyrogram.types import LinkPreviewOptions, Message
 from ..core.client import app
 from ..core.config import config
 from ..core.mongo import mongo
-from ..locale import text as t
+from ..local import text as t
 from ..utils.buttons import build_clone_keyboard, keyboards
 from . import start_registry as registry
 
