@@ -1,4 +1,3 @@
-# Copyright (c) 2026 tusar404
 # Licensed under the MIT License.
 
 from __future__ import annotations
@@ -54,7 +53,7 @@ class Config:
         self.port = _read_int("PORT", 10000)
         self.download_dir = os.getenv("DOWNLOAD_DIR", "downloads").strip() or "downloads"
         self.updates_channel_url = os.getenv(
-            "UPDATES_CHANNEL_URL", "https://t.me/SERENAUpdates"
+            "UPDATES_CHANNEL_URL", "https://t.me/serenaunzipbot"
         ).strip()
 
     def validate(self) -> None:

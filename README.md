@@ -52,7 +52,7 @@ Never commit `.env`, bot tokens, API hashes, API keys, or database passwords to 
 | `MONGO_URI` | Yes | Create a MongoDB database at [MongoDB Atlas](https://www.mongodb.com/atlas/database), then copy its connection string. |
 | `OWNER_ID` | Yes | Your numeric Telegram user ID. You can retrieve it through a trusted Telegram user-ID bot such as [@userinfobot](https://t.me/userinfobot). |
 | `SUDO_USERS` | Yes | Comma-separated numeric Telegram user IDs allowed to use admin commands. `OWNER_ID` is added automatically. |
-| `UPDATES_CHANNEL_URL` | Optional | Your own Telegram updates channel URL, for example `https://t.me/your_channel`. |
+| `UPDATES_CHANNEL_URL` | Optional | SERENA updates channel: `https://t.me/serenaunzipbot`. |
 | `APP_NAME` | Optional | Keep this as `SERENA` for the current branding. |
 | `HOST` / `PORT` | Managed | Local defaults are `0.0.0.0` and `10000`. Render injects `PORT` automatically. |
 

@@ -1,4 +1,3 @@
-# Copyright (c) 2026 tusar404
 # Licensed under the MIT License.
 
 from .client import app

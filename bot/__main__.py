@@ -1,4 +1,3 @@
-# Copyright (c) 2026 tusar404
 # Licensed under the MIT License.
 
 import asyncio
@@ -46,7 +45,14 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    # PyroTGFork creates its storage on the event loop that exists when the
+    # Client object is imported. Reuse that same loop instead of asyncio.run(),
+    # which would create a second loop and break SQLiteStorage on Render.
+    loop = asyncio.get_event_loop()
     try:
-        asyncio.run(main())
+        loop.run_until_complete(main())
     except KeyboardInterrupt:
         pass
+    finally:
+        if not loop.is_closed():
+            loop.close()
