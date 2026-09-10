@@ -15,12 +15,14 @@ async def main() -> None:
     config.validate()
     LOGGER.info("Starting %s v%s...", __bot_name__, __version__)
 
-    setup_directories()
-    await mongo.connect()
-    await yt_api.get_session()
-    await app.start()
-
+    app_started = False
     try:
+        setup_directories()
+        await mongo.connect()
+        await yt_api.get_session()
+        await app.start()
+        app_started = True
+
         from . import handlers
 
         await health_server.start()
@@ -35,8 +37,9 @@ async def main() -> None:
         for bot_id in list(clones.active):
             with suppress(Exception):
                 await clones.stop(bot_id)
-        with suppress(Exception):
-            await app.stop()
+        if app_started:
+            with suppress(Exception):
+                await app.stop()
         with suppress(Exception):
             await yt_api.close()
         with suppress(Exception):
